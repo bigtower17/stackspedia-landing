@@ -103,7 +103,7 @@ export default function Home() {
     setT(translations[detectedLang as keyof typeof translations]);
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
     try {
