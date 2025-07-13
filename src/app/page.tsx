@@ -17,7 +17,7 @@ const translations = {
     features: {
       docs: { title: "Documentation", desc: "Complete and updated guides" },
       tools: { title: "Tools", desc: "Utilities for developers" },
-      insights: { title: "Insights", desc: "Know the most common frameworks" }
+      insights: { title: "Insights", desc: "About the most common frameworks" } // Inglese
     }
   },
   it: {
@@ -32,7 +32,7 @@ const translations = {
     features: {
       docs: { title: "Documentazione", desc: "Guide complete e aggiornate" },
       tools: { title: "Strumenti", desc: "Utility per sviluppatori" },
-      insights: { title: "Insight", desc: "Conosci i framework più comuni" }
+      insights: { title: "Insight", desc: "Sui framework più comuni" }
     }
   },
   es: {
@@ -47,7 +47,7 @@ const translations = {
     features: {
       docs: { title: "Documentación", desc: "Guías completas y actualizadas" },
       tools: { title: "Herramientas", desc: "Utilidades para desarrolladores" },
-      insights: { title: "Insights", desc: "Conoce los frameworks más comunes" }
+      insights: { title: "Insights", desc: "Sobre los frameworks más comunes" } // Spagnolo
     }
   },
   fr: {
@@ -62,7 +62,7 @@ const translations = {
     features: {
       docs: { title: "Documentation", desc: "Guides complets et à jour" },
       tools: { title: "Outils", desc: "Utilitaires pour développeurs" },
-      insights: { title: "Insights", desc: "Connaissez les frameworks les plus courants" }
+      insights: { title: "Insights", desc: "Sur les frameworks les plus courants" } // Francese
     }
   },
   de: {
@@ -77,7 +77,7 @@ const translations = {
     features: {
       docs: { title: "Dokumentation", desc: "Vollständige und aktuelle Anleitungen" },
       tools: { title: "Werkzeuge", desc: "Dienstprogramme für Entwickler" },
-      insights: { title: "Insights", desc: "Kenne die gängigsten Frameworks" }
+      insights: { title: "Insights", desc: "Über die gängigsten Frameworks" }   // Tedesco
     }
   }
 };
@@ -85,7 +85,7 @@ const translations = {
 function detectLanguage() {
   if (typeof navigator !== 'undefined') {
     const browserLang = navigator.language || navigator.languages?.[0];
-    const langCode = browserLang?.split('-')[0];
+    const langCode = browserLang?.split('-')[0] as keyof typeof translations;
     return translations[langCode] ? langCode : 'en';
   }
   return 'en';
@@ -100,7 +100,7 @@ export default function Home() {
   useEffect(() => {
     const detectedLang = detectLanguage();
     setLanguage(detectedLang);
-    setT(translations[detectedLang]);
+    setT(translations[detectedLang as keyof typeof translations]);
   }, []);
 
   const handleSubmit = async (e) => {
@@ -147,7 +147,7 @@ export default function Home() {
                   key={lang}
                   onClick={() => {
                     setLanguage(lang);
-                    setT(translations[lang]);
+                    setT(translations[lang as keyof typeof translations]);
                   }}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${language === lang
                       ? 'bg-white/20 text-white'
