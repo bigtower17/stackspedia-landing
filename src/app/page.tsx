@@ -111,7 +111,7 @@ export default function Home() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       setStatus("success");
       setEmail("");
-    } catch (err) {
+    } catch {
       setStatus("error");
     }
   };
