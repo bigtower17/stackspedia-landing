@@ -1,309 +1,283 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { ProjectWithStack } from '@/lib/types';
+import Link from 'next/link';
+import { Star, Rocket, GitFork } from 'lucide-react';
 
-const translations = {
-  en: {
-    title: "Stackspedia",
-    subtitle: "is coming!",
-    description: "The hub for Open Source projects. Sign up now to receive exclusive updates and get early access.",
-    emailPlaceholder: "Enter your email",
-    buttonText: "🎯 Notify me when ready",
-    loading: "Sending...",
-    successMessage: "✨ Perfect! We'll contact you soon with exclusive news",
-    errorMessage: "⚠️ Oops! Something went wrong. Please try again in a moment",
-    features: {
-      docs: { title: "Documentation", desc: "Complete and updated guides" },
-      tools: { title: "Tools", desc: "Utilities for developers" },
-      insights: { title: "Insights", desc: "About the most common frameworks" } // Inglese
-    }
-  },
-  it: {
-    title: "Stackspedia",
-    subtitle: "sta arrivando!",
-    description: "L'hub per i progetti Open Source. Iscriviti ora per ricevere aggiornamenti esclusivi e accedere in anteprima.",
-    emailPlaceholder: "Inserisci la tua email",
-    buttonText: "🎯 Avvisami quando è pronto",
-    loading: "Invio in corso...",
-    successMessage: "✨ Perfetto! Ti contatteremo presto con novità esclusive",
-    errorMessage: "⚠️ Ops! Qualcosa è andato storto. Riprova tra un momento",
-    features: {
-      docs: { title: "Documentazione", desc: "Guide complete e aggiornate" },
-      tools: { title: "Strumenti", desc: "Utility per sviluppatori" },
-      insights: { title: "Insight", desc: "Sui framework più comuni" }
-    }
-  },
-  es: {
-    title: "Stackspedia",
-    subtitle: "¡ya viene!",
-    description: "El hub para proyectos Open Source. Regístrate ahora para recibir actualizaciones exclusivas y acceso anticipado.",
-    emailPlaceholder: "Ingresa tu email",
-    buttonText: "🎯 Avísame cuando esté listo",
-    loading: "Enviando...",
-    successMessage: "✨ ¡Perfecto! Te contactaremos pronto con noticias exclusivas",
-    errorMessage: "⚠️ ¡Ups! Algo salió mal. Inténtalo de nuevo en un momento",
-    features: {
-      docs: { title: "Documentación", desc: "Guías completas y actualizadas" },
-      tools: { title: "Herramientas", desc: "Utilidades para desarrolladores" },
-      insights: { title: "Insights", desc: "Sobre los frameworks más comunes" } // Spagnolo
-    }
-  },
-  fr: {
-    title: "Stackspedia",
-    subtitle: "arrive bientôt!",
-    description: "Le hub pour les projets Open Source. Inscrivez-vous maintenant pour recevoir des mises à jour exclusives et un accès anticipé.",
-    emailPlaceholder: "Entrez votre email",
-    buttonText: "🎯 Prévenez-moi quand c'est prêt",
-    loading: "Envoi en cours...",
-    successMessage: "✨ Parfait! Nous vous contacterons bientôt avec des nouvelles exclusives",
-    errorMessage: "⚠️ Oups! Quelque chose a mal tourné. Réessayez dans un moment",
-    features: {
-      docs: { title: "Documentation", desc: "Guides complets et à jour" },
-      tools: { title: "Outils", desc: "Utilitaires pour développeurs" },
-      insights: { title: "Insights", desc: "Sur les frameworks les plus courants" } // Francese
-    }
-  },
-  de: {
-    title: "Stackspedia",
-    subtitle: "kommt bald!",
-    description: "Der Hub für Open Source Projekte. Melde dich jetzt an, um exklusive Updates zu erhalten und frühen Zugang zu bekommen.",
-    emailPlaceholder: "E-Mail eingeben",
-    buttonText: "🎯 Benachrichtige mich, wenn bereit",
-    loading: "Wird gesendet...",
-    successMessage: "✨ Perfekt! Wir werden Sie bald mit exklusiven Neuigkeiten kontaktieren",
-    errorMessage: "⚠️ Ups! Etwas ist schief gelaufen. Versuchen Sie es in einem Moment erneut",
-    features: {
-      docs: { title: "Dokumentation", desc: "Vollständige und aktuelle Anleitungen" },
-      tools: { title: "Werkzeuge", desc: "Dienstprogramme für Entwickler" },
-      insights: { title: "Insights", desc: "Über die gängigsten Frameworks" }   // Tedesco
-    }
-  }
-};
-
-function detectLanguage() {
-  if (typeof navigator !== 'undefined') {
-    const browserLang = navigator.language || navigator.languages?.[0];
-    const langCode = browserLang?.split('-')[0] as keyof typeof translations;
-    return translations[langCode] ? langCode : 'en';
-  }
-  return 'en';
-}
-
-export default function Home() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle");
-  const [language, setLanguage] = useState('en');
-  const [t, setT] = useState(translations.en);
+export default function HomePage() {
+  const [popularProjects, setPopularProjects] = useState<ProjectWithStack[]>([]);
+  const [newestProjects, setNewestProjects] = useState<ProjectWithStack[]>([]);
+  const [featuredProjects, setFeaturedProjects] = useState<ProjectWithStack[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const detectedLang = detectLanguage();
-    setLanguage(detectedLang);
-    setT(translations[detectedLang as keyof typeof translations]);
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch featured projects
+        const featuredResponse = await fetch('/api/projects?featured=true&per_page=6');
+        const featuredData = await featuredResponse.json();
+        
+        // Fetch popular projects (you could order by stars or other metrics)
+        const popularResponse = await fetch('/api/projects?per_page=6');
+        const popularData = await popularResponse.json();
+        
+        // Fetch newest projects
+        const newestResponse = await fetch('/api/projects?per_page=6');
+        const newestData = await newestResponse.json();
+        
+        if (featuredResponse.ok) {
+          setFeaturedProjects(featuredData.projects);
+        }
+        if (popularResponse.ok) {
+          setPopularProjects(popularData.projects);
+        }
+        if (newestResponse.ok) {
+          setNewestProjects(newestData.projects);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus("loading");
-    
-    try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setStatus("success");
-        setEmail("");
-      } else {
-        // Mostra errore specifico (rate limit, email duplicata, etc.)
-        setStatus("error");
-        console.error('Errore signup:', data.error);
-      }
-    } catch {
-      setStatus("error");
+    if (searchQuery.trim()) {
+      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
     }
   };
 
-  return (
-    <>
-      <main className="relative min-h-screen bg-slate-900 text-white flex items-center justify-center px-4 overflow-hidden pb-16">
-        {/* Animated background with floating elements */}
-        <div className="absolute inset-0 z-0">
-          {/* Floating colored orbs */}
-          <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute top-40 right-32 w-24 h-24 bg-red-500/20 rounded-full blur-xl animate-pulse delay-1000"></div>
-          <div className="absolute bottom-40 left-32 w-40 h-40 bg-green-500/20 rounded-full blur-xl animate-pulse delay-2000"></div>
-          <div className="absolute bottom-20 right-20 w-28 h-28 bg-orange-500/20 rounded-full blur-xl animate-pulse delay-3000"></div>
+  const getStackTypeColor = (type: string) => {
+    switch (type) {
+      case 'frontend': return 'bg-blue-100 text-blue-700';
+      case 'backend': return 'bg-green-100 text-green-700';
+      case 'database': return 'bg-purple-100 text-purple-700';
+      case 'ci_cd': return 'bg-orange-100 text-orange-700';
+      case 'devops': return 'bg-red-100 text-red-700';
+      case 'tooling': return 'bg-yellow-100 text-yellow-700';
+      case 'runtime': return 'bg-pink-100 text-pink-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
 
-          {/* Animated grid */}
-          <svg className="w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                <path d="M60 0 L0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-700';
+      case 'stale': return 'bg-yellow-100 text-yellow-700';
+      case 'deprecated': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const ProjectCard = ({ project }: { project: ProjectWithStack }) => (
+    <Card className="p-6 hover:shadow-md transition-shadow duration-200 border border-gray-200">
+      <div className="flex items-start gap-4">
+        {project.logo_url && (
+          <img 
+            src={project.logo_url} 
+            alt={project.name}
+            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <Link href={`/projects/${project.slug}`}>
+              <h3 className="font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                {project.name}
+              </h3>
+            </Link>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+              {project.status}
+            </span>
+          </div>
+          
+          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+            {project.description || 'No description available'}
+          </p>
+          
+          <div className="flex flex-wrap gap-1 mb-3">
+            {project.stack_components.slice(0, 3).map((component) => (
+              <span 
+                key={component.id}
+                className={`px-2 py-1 rounded-full text-xs font-medium ${getStackTypeColor(component.type)}`}
+              >
+                {component.name}
+              </span>
+            ))}
+            {project.stack_components.length > 3 && (
+              <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                +{project.stack_components.length - 3}
+              </span>
+            )}
+          </div>
+          
+          {project.metrics && (
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              {project.metrics.stars && (
+                <span className="flex items-center gap-1">
+                  <Star className="w-4 h-4" /> {project.metrics.stars}
+                </span>
+              )}
+              {project.metrics.forks && (
+                <span className="flex items-center gap-1">
+                  <GitFork className="w-4 h-4" /> {project.metrics.forks}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-8 py-12">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Discover the best open source projects
+          </h1>
+          <p className="text-xl text-gray-600 mb-6">
+            A growing, open-source database of the best OSS projects <Rocket className="inline w-5 h-5 ml-1" />
+          </p>
+          <p className="text-lg text-gray-500">
+            Designed to make the ecosystem more transparent and accessible
+          </p>
         </div>
 
-        <div className="z-10 w-full max-w-6xl mx-auto px-4">
-          {/* Language Selector */}
-          <div className="flex justify-center mb-16">
-            <div className="flex gap-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-2">
-              {Object.keys(translations).map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => {
-                    setLanguage(lang);
-                    setT(translations[lang as keyof typeof translations]);
-                  }}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${language === lang
-                      ? 'bg-white/20 text-white'
-                      : 'text-slate-400 hover:text-white hover:bg-white/10'
-                    }`}
-                >
-                  {lang.toUpperCase()}
-                </button>
+        {/* Search Bar */}
+        <div className="max-w-2xl mx-auto mb-16">
+          <form onSubmit={handleSearch} className="relative">
+            <Input
+              type="text"
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-12 pl-4 pr-12 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+            <Button 
+              type="submit" 
+              className="absolute right-2 top-2 h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Search
+            </Button>
+          </form>
+        </div>
+
+        {/* Featured Projects */}
+        {featuredProjects.length > 0 && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Star className="w-6 h-6 text-yellow-500" />
+                Featured projects
+              </h2>
+              <Link href="/featured" className="text-blue-600 hover:text-blue-700 font-medium">
+                See all →
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {featuredProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
               ))}
             </div>
           </div>
+        )}
 
-          {/* Logo and Title - Perfectly Centered */}
-          <div className="w-full flex flex-col items-center justify-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <svg className="flex-shrink-0" width="80" height="80" viewBox="-30 -100 130 120" xmlns="http://www.w3.org/2000/svg">
-                <g>
-                  <path d="M-25,-15 L25,-40 L75,-15 L25,10 Z" fill="#3498db" opacity="0.9" className="animate-pulse" />
-                  <path d="M-25,-33.75 L25,-58.75 L75,-33.75 L25,-8.75 Z" fill="#e74c3c" opacity="0.9" className="animate-pulse delay-300" />
-                  <path d="M-25,-52.5 L25,-77.5 L75,-52.5 L25,-27.5 Z" fill="#2ecc71" opacity="0.9" className="animate-pulse delay-700" />
-                  <path d="M-25,-71.25 L25,-96.25 L75,-71.25 L25,-46.25 Z" fill="#f39c12" opacity="0.9" className="animate-pulse delay-1000" />
-                  <path d="M25,-40 L75,-15 L75,-33.75 L25,-58.75 Z" fill="#2980b9" opacity="0.7" />
-                  <path d="M25,-58.75 L75,-33.75 L75,-52.5 L25,-77.5 Z" fill="#c0392b" opacity="0.7" />
-                  <path d="M25,-77.5 L75,-52.5 L75,-71.25 L25,-96.25 Z" fill="#27ae60" opacity="0.7" />
-                </g>
-              </svg>
-              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-white">
-                {t.title}
-              </h1>
-            </div>
-            <p className="text-xl lg:text-2xl text-slate-300 font-light">
-              {t.subtitle}
-            </p>
+        {/* Popular Projects */}
+        <div className="mb-16">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">Popular projects</h2>
+            <Link href="/popular" className="text-blue-600 hover:text-blue-700 font-medium">
+              See all →
+            </Link>
           </div>
-
-          {/* Form - Centered */}
-          <div className="flex justify-center mb-12">
-            <div className="w-full max-w-md">
-              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl">
-                <div className="space-y-6">
-                  <div className="relative">
-                    <Input
-                      type="email"
-                      placeholder={t.emailPlaceholder}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="bg-white/10 border border-white/20 text-white placeholder:text-slate-400 h-14 text-lg rounded-2xl focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 w-full"
-                    />
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/20 via-red-500/20 to-green-500/20 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+          
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-6 border border-gray-200 rounded-lg animate-pulse">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                    </div>
                   </div>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={status === "loading"}
-                    className="w-full h-14 text-lg font-semibold rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-lg"
-                  >
-                    {status === "loading" ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        {t.loading}
-                      </div>
-                    ) : (
-                      t.buttonText
-                    )}
-                  </Button>
                 </div>
-                {status === "success" && (
-                  <div className="mt-6 p-4 bg-green-500/20 border border-green-500/30 rounded-2xl">
-                    <p className="text-green-400 text-center font-medium">
-                      {t.successMessage}
-                    </p>
-                  </div>
-                )}
-                {status === "error" && (
-                  <div className="mt-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl">
-                    <p className="text-red-400 text-center font-medium">
-                      {t.errorMessage}
-                    </p>
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
-          </div>
-
-          {/* Description centered */}
-          <div className="flex justify-center mb-12">
-            <p className="text-slate-300 text-lg lg:text-xl leading-relaxed max-w-2xl text-center">
-              {t.description}
-            </p>
-          </div>
-
-          {/* Features Preview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 text-center">
-              <div className="text-3xl mb-3">📚</div>
-              <h3 className="text-blue-300 font-semibold mb-2">{t.features.docs.title}</h3>
-              <p className="text-slate-400 text-sm">{t.features.docs.desc}</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {popularProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
             </div>
-            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 text-center">
-              <div className="text-3xl mb-3">🛠️</div>
-              <h3 className="text-red-300 font-semibold mb-2">{t.features.tools.title}</h3>
-              <p className="text-slate-400 text-sm">{t.features.tools.desc}</p>
-            </div>
-            <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-6 text-center">
-              <div className="text-3xl mb-3">🚀</div>
-              <h3 className="text-green-300 font-semibled mb-2">{t.features.insights.title}</h3>
-              <p className="text-slate-400 text-sm">{t.features.insights.desc}</p>
-            </div>
-          </div>
+          )}
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-slate-900/50 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-2">
-            {/* Logo e Copyright */}
-            <div className="flex items-center gap-2">
-              <svg width="20" height="20" viewBox="-30 -100 130 120" xmlns="http://www.w3.org/2000/svg">
-                <g>
-                  <path d="M-25,-15 L25,-40 L75,-15 L25,10 Z" fill="#3498db" opacity="0.9" />
-                  <path d="M-25,-33.75 L25,-58.75 L75,-33.75 L25,-8.75 Z" fill="#e74c3c" opacity="0.9" />
-                  <path d="M-25,-52.5 L25,-77.5 L75,-52.5 L25,-27.5 Z" fill="#2ecc71" opacity="0.9" />
-                  <path d="M-25,-71.25 L25,-96.25 L75,-71.25 L25,-46.25 Z" fill="#f39c12" opacity="0.9" />
-                </g>
-              </svg>
-              <span className="text-sm font-bold text-white">Stackspedia</span>
-              <span className="text-slate-400 text-xs">© 2025 Beniamino Torregrossa</span>
-            </div>
-
-            {/* Social Links */}
-            <div className="flex items-center gap-3">
-              <a href="https://www.linkedin.com/in/bentorregrossa/" className="text-slate-400 hover:text-white transition-colors">
-                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                </svg>
-              </a>
-            </div>
+        {/* Newest Projects */}
+        <div className="mb-16">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">Newest projects</h2>
+            <Link href="/newest" className="text-blue-600 hover:text-blue-700 font-medium">
+              See all →
+            </Link>
           </div>
+          
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-6 border border-gray-200 rounded-lg animate-pulse">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {newestProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          )}
         </div>
-      </footer>
-    </>
 
+        {/* Call to Action */}
+        <div className="text-center bg-white rounded-lg p-8 border border-gray-200">
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            Know a great project?
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Help us grow the database by submitting your favorite open source projects.
+          </p>
+          <Link href="/add-project">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
+              Add a project
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
