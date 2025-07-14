@@ -106,11 +106,26 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
+    
     try {
-      // Simulated API call - replace with your Supabase code
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setStatus("success");
-      setEmail("");
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setStatus("success");
+        setEmail("");
+      } else {
+        // Mostra errore specifico (rate limit, email duplicata, etc.)
+        setStatus("error");
+        console.error('Errore signup:', data.error);
+      }
     } catch {
       setStatus("error");
     }
