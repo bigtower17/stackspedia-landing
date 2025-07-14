@@ -13,6 +13,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Controlla se Supabase è disponibile
+    if (!supabase) {
+      console.error('❌ Supabase non disponibile - variabili d\'ambiente mancanti');
+      return NextResponse.json(
+        { error: 'Servizio temporaneamente non disponibile. Riprova più tardi.' },
+        { status: 503 }
+      );
+    }
+
     // Controlla se l'email esiste già
     const { data: existingEmail } = await supabase
       .from('emails')
