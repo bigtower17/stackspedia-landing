@@ -6,7 +6,13 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "scrape:test": "node scripts/test-scraping.js",
+    "scrape:update": "curl -X POST http://localhost:3000/api/admin/metrics/update",
+    "scrape:stats": "curl http://localhost:3000/api/admin/metrics/update",
+    "import:github": "node scripts/import-github-project.js",
+    "import:examples": "node scripts/import-github-project.js --examples",
+    "import:test": "node scripts/test-complete-import.js"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
